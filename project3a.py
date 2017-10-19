@@ -7,8 +7,8 @@ import time
 
 
 ### Initial values:
-a = 100
-v = 7
+a = 4*np.pi**2
+v = 2*np.pi
 r = 1
 
 t_final = 5
@@ -37,5 +37,5 @@ for i in range(N-1):
 	vy[i+1] = vy[i] - k*(y[i+1] + y[i])
 
 axis = np.linspace(0,r, num =N)
-plt.plot(axis, x, axis, y)
+plt.plot(x,y)
 plt.show()
