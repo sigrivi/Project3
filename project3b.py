@@ -25,21 +25,28 @@ class Acceleration:
 	def __init__(self, Planets):
 		self.N_p=len(Planets) ## Number of planets in the Planets list
 
-	def Update(self, Planets):
+	def Update(self, Planets, beta = 3.):
 		for k in range(3): ## 3 is the length of the r and v vector
 
 			for i in range(self.N_p):
 				P=Planets[i]
 				P.a[k] = 0
+				c = 2*365.35*6*6*.1 #speed of light in AU/yr
 				for j in range(self.N_p):
 					if j==i:
-						P.a[k] = P.a[k] -4*pi**2*P.r[k]/np.linalg.norm(P.r)**3
+						if P.name == "Mercury":
+							
+							P.a[k] = P.a[k] -(4*pi**2*P.r[k]/np.linalg.norm(P.r)**beta) * (1+3*(P.mass*np.linalg.norm(P.v)/c)**2) ### ADD RELATIVISTIC EFFECT HERE
+						else: 
+							P.a[k] = P.a[k] -4*pi**2*P.r[k]/np.linalg.norm(P.r)**beta
 						
 					else: 
 						distance = P.r-Planets[j].r
 						#print(j, distance, Planets[j].r)
-						P.a[k] = P.a[k] - distance[k]*Planets[j].mass/np.linalg.norm(distance)**3
+						P.a[k] = P.a[k] - distance[k]*Planets[j].mass/np.linalg.norm(distance)**beta
 		return(Planets)
+
+
 
 class DiffEqSolver:
 	def __init__(self, h):
@@ -53,24 +60,26 @@ class DiffEqSolver:
 				P.r[i] = P.r[i]+h*P.v[i]
 		return Planets
 
-	def VelocityVerlet(self,Planets):
+	def VelocityVerlet(self,Planets, beta =3.):
 		h = self.h
 		for P in Planets:
 			for i in range(len(P.v)):
 				P.v[i] = P.v[i]+0.5*h*P.a[i]
 				P.r[i] = P.r[i]+h*P.v[i]
 		accel = Acceleration(Planets)
-		accel.Update(Planets)
+		accel.Update(Planets , beta)
 		for P in Planets:
 			for i in range(len(P.v)):
 				P.v[i] = P.v[i]+0.5*h*P.a[i]
 
-N = 20		# number of grid points
-h = 1/20 		# h = 1/t_stop 
-days = 365.25 	# number of days in a year
+t_final = 10				# number of years
+h = 1/1000			# step length 
+N = np.int(t_final/h) 	# number of grid points
+days = 365.25 			# number of days in a year
+
 
 # solves the coupled differential equations. Planets is a list of planets, method is either "EulerCromer" or "VelocityVerlet". h is the step length. 
-def solve(Planets, method,h):
+def solve(Planets, method,h, beta = 3.):
 	solver = DiffEqSolver(h)
 	accel = Acceleration(Planets)
 	N_p = len(Planets)
@@ -92,8 +101,8 @@ def solve(Planets, method,h):
 
 		if method == "VelocityVerlet":
 			for i in range(1,N):
-				accel.Update(Planets)
-				solver.VelocityVerlet(Planets)
+				accel.Update(Planets,beta)
+				solver.VelocityVerlet(Planets,beta)
 				x[j,i] = Planets[j].r[0]
 				y[j,i] = Planets[j].r[1]
 	return(x,y)
@@ -122,6 +131,7 @@ OnePlanet = [Planet(3e-6, [1,0,0], [0,2*pi,0], "Earth")]
 
 # Initial values of the planets from 2017-Oct-04:
 Mercury = Planet(1.65e-7, [-0.3789210,2.56223e-02,0],[-7.32704e-03*days, -2.68813e-02*days,0], "Mercury")
+MercuryNewtonian = Planet(1.65e-7, [-0.3789210,2.56223e-02,0],[-7.32704e-03*days, -2.68813e-02*days,0], "MercuryNewtonian")
 Venus = Planet(2.45e-6, [-.483111, .534117,0],[-1.49738e-02*days, -1.37846e-02*days,0 ], "Venus")
 Earth = Planet(3e-6,[.985157,.191737e-01,0],[-3.48636e-3*days,1.68385e-02*days,0],"Earth")
 Mars = Planet(3.3e-7, [-1.49970, 0.724618,0], [-5.52182e-03*days, -1.14214e-02*days,0],"Mars")
@@ -132,41 +142,78 @@ Neptune = Planet(0.515e-4, [28.6020, -8.86057, 0],[9.08471e-04*days, 3.01748e-03
 
 # A list of all the planets
 Planets = [Earth, Jupiter, Mercury, Venus, Mars, Saturn, Uranus, Neptune]
-
-#x,y = solve(Planets, "EulerCromer", h)
-#plot(Planets,x,y,5)
-
-P_E = [Planet(3e-6, [1,0,0], [0,2*pi,0], "Earth")]
-P_V = [Planet(3e-6, [1,0,0], [0,2*pi,0], "Earth")]
-print(P_E[0].total_energy())
-
-
-x_euler,y_euler = solve(P_E, "EulerCromer", h)
-x_euler,y_euler = x_euler[0],y_euler[0]
-
-diff_E = np.zeros(N)
-for i in range(N):
-	diff_E = np.abs(x_euler**2+y_euler**2-1)
-#plt.plot(diff_E,label ="EulerCromer")
-print(P_E[0].total_energy())
-
-print(P_V[0].total_energy())
-x_verlet,y_verlet = solve(P_V, "VelocityVerlet", h)
-x_verlet,y_verlet = x_verlet[0], y_verlet[0]
-diff_V = np.zeros(N)
-for i in range(N):
-	diff_V = np.abs(x_euler**2+y_euler**2-1)
-#plt.plot(diff_V, label="VelocityVerlet")
-print(P_V[0].total_energy())
-
-plt.plot(x_euler,y_euler,label="EulerCromer")
-plt.plot(x_verlet,y_verlet,label="VelocityVerlet")
-
-plt.legend()
+P_Newtonian = [MercuryNewtonian]
+x_Newtonian, y_Newtonian = solve(P_Newtonian, "VelocityVerlet",h)
+plt.plot(x_Newtonian[0], y_Newtonian[0])
+P_Relativistic = [Mercury]
+x_Relatvistic, y_Relativistic = solve(P_Relativistic, "VelocityVerlet",h)
+plt.plot(x_Relatvistic[0], y_Relativistic[0])
 plt.show()
 
+def ComapareSolvers():
+	P_E = [Planet(3e-6, [1,0,0], [0,2*pi,0], "Earth")]
+	P_V = [Planet(3e-6, [1,0,0], [0,2*pi,0], "Earth")]
+	initial_en_E = P_E[0].total_energy()
+	initial_en_V = P_V[0].total_energy()
 
 
+	x_euler,y_euler = solve(P_E, "EulerCromer", h)
+	x_euler,y_euler = x_euler[0],y_euler[0]
+
+	diff_E = np.zeros(N)
+	for i in range(N):
+		diff_E = np.abs(x_euler**2+y_euler**2-1)
+	#plt.plot(diff_E,label ="EulerCromer")
+	diff_en_E = (initial_en_E - P_E[0].total_energy())/initial_en_E 	#relative difference in total energy Euler Cormer
+	print(diff_en_E)
+
+	x_verlet,y_verlet = solve(P_V, "VelocityVerlet", h)
+	x_verlet,y_verlet = x_verlet[0], y_verlet[0]
+	diff_V = np.zeros(N)
+	for i in range(N):
+		diff_V = np.abs(x_verlet**2+y_verlet**2-1)
+	#plt.plot(diff_V, label="VelocityVerlet")
+	diff_en_V = (initial_en_V -  P_V[0].total_energy())/initial_en_V	#relatevi difference in total energy Velocity Verlet
+	print(diff_en_V)
+
+	plt.plot(x_euler,y_euler,label="EulerCromer")
+	plt.plot(x_verlet,y_verlet,label="VelocityVerlet")
+
+	plt.legend()
+	plt.show()
+	
+
+#ComapareSolvers()
+
+def InitialVelocity(velocities): 
+	for v in velocities:
+		Earth = [Planet(3e-6, [1,0,0], [0,v,0], "Earth")]
+		x,y = solve(Earth, "VelocityVerlet", h)
+		x,y = x[0],y[0]
+		plt.plot(x,y, label =  v)
+	plt.legend()
+	plt.axis('equal')
+	plt.xlabel("x/AU")
+	plt.ylabel("y/AU")
+	plt.title("orbit of Earth with different inital velocities")
+	plt.show()
+
+velocities = [6,7,8,9]
+#InitialVelocity(velocities)
+
+def GravitationalConstant(power):
+	for p in power:
+		Earth = [Planet(3e-6, [1,0,0], [0,2*pi,0], "Earth")]
+		x,y = solve(Earth, "VelocityVerlet", h, p)
+		x,y = x[0],y[0]
+		plt.plot(x,y, label =  p-1)
+	plt.legend()
+	plt.axis('equal')
+	plt.xlabel("x/AU")
+	plt.ylabel("y/AU")
+	plt.title("orbit of Earth with different expression for gravitational force")
+	plt.show()
+#GravitationalConstant([3,3.5,4])
 
 
 
