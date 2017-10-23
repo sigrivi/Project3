@@ -13,7 +13,7 @@ v = 2*pi/r 		# speed in AU/yr
 a = 4*pi**2 	# acceleration in AU/yr**2
 
 t = 1. 			# t is number of years
-N = 100000        # N is number of grid points
+N = 10        # N is number of grid points
 h = t/N 		# h is step length
 
 ## Vectors for x and y position: 
@@ -45,6 +45,7 @@ plt.axis('equal')
 plt.title("Sun-Earth system. The sun is in the origin. Earth in circular orbit.")
 plt.xlabel("x/AU")
 plt.ylabel("y/AU")
+plt.show()
 #plt.savefig('sun-earth',dpi=225)
 
 #k = 2*t**2*np.pi**2/N**2
