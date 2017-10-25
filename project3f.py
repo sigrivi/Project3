@@ -1,3 +1,4 @@
+
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -27,13 +28,13 @@ def plot(Planets, x, y, delta_t): # Input: list of planets, array of x-positions
 	
 			
 		plt.plot(x[j],y[j],label=Planets[j].name)
-	plt.title("The solar system. t_final = 2" )
+	plt.title("The solar system. t_final = 20. h = 1/100" )
 	plt.xlabel("x/AU")
 	plt.ylabel("y/AU")
 	plt.axis('equal')
 	plt.legend()
+	plt.savefig('solar_system20',dpi=225)
 	plt.show()
-	#plt.savefig('solar_system',dpi=225)
 
 # Initial values of the planets from 2017-Oct-04:
 Mercury = Planet(1.65e-7, [-0.3789210,2.56223e-02,0],[-7.32704e-03*days, -2.68813e-02*days,0], "Mercury")
@@ -46,8 +47,18 @@ Saturn = Planet(2.75e-4,[-0.421224,-10.0462,0],[5.26820e-03*days,-2.52167e-04*da
 Uranus = Planet(4.4e-5,[17.8825, 8.76632,0],[-1.75983e-03*days,3.34820e-03*days],"Uranus")
 Neptune = Planet(0.515e-4, [28.6020, -8.86057, 0],[9.08471e-04*days, 3.01748e-03*days,0],"Neptune")
 
-# A list of all the planets 
-Planets = [Earth, Jupiter, Mercury, Venus, Mars, Saturn, Uranus, Neptune]
 
-x,y = solve(Planets, "VelocityVerlet", 1/100, 2)
+# A list of all the planets 
+Planets = [Mercury,Venus, Earth,Mars,  Jupiter, Saturn, Uranus, Neptune]
+innerPlanets = [Mercury,Venus, Earth,Mars]
+NoMercury = [Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune]
+
+print("Mercury", Mercury.total_energy(), "Earth", Earth.total_energy(), "Neptune", Neptune.total_energy())
+time0 = time.time()
+
+x,y = solve(Planets, "VelocityVerlet", 1/100, 20)
 plot(Planets, x,y,10)
+
+print("Mercury", Mercury.total_energy(), "Earth", Earth.total_energy(), "Neptune", Neptune.total_energy()) 
+time = time.time()-time0
+print(time)
