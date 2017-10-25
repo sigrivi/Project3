@@ -28,23 +28,23 @@ def InitialVelocity(velocities,h, t_final = 3.):  # Input: a vector of initial x
 	plt.xlabel("x/AU")
 	plt.ylabel("y/AU")
 	plt.title("The orbit of Earth with different inital velocities. t_final = %d yr " %t_final)
-	plt.savefig('%d year' %t_final, dpi=225)
+	#plt.savefig('%d year' %t_final, dpi=225)
 	plt.show()
 
 velocities = [2,2.5,2**1.5, 3, 3.5]
-#InitialVelocity(velocities, 1/100, 1)
+InitialVelocity(velocities, 1/100, 1)
 
 def GravitationalConstant(power, h, t_final = 1.):
 	for p in power:
 		Earth = [Planet(3e-6, [1,0,0], [0,2*pi,0], "Earth")]
 		x,y = solve(Earth, "VelocityVerlet", h, t_final,  p)
 		x,y = x[0],y[0]
-		plt.plot(x,y, label =  p-1)
+		plt.plot(x,y, label = "beta = %.1f" %(p-1))
 	plt.legend()
 	plt.axis('equal')
 	plt.xlabel("x/AU")
 	plt.ylabel("y/AU")
 	plt.title("The orbit of Earth with different expressions for gravitational force")
-	plt.savefig("gravitationalForce")
+	#plt.savefig("gravitationalForce")
 	plt.show()
-GravitationalConstant([3,3.5,4], 1/100, 5)
+GravitationalConstant([3,3.5, 4], 1/100, 5)
