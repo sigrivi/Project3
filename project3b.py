@@ -22,7 +22,7 @@ class Planet:
 
 		return(self.energy)
 	def angular_momentum(self):
-		self.l = np.linalg.norm(np.cross(self.r,self.v*self.mass))
+		self.l = (self.r[0]*self.v[1]-self.r[1]*self.v[0])
 		return(self.l)
 
 
@@ -92,7 +92,7 @@ def solve(Planets, method, h, t_final =1., beta = 3.):
 	y = np.zeros((N_p, N))	# array for y positions
 
 
-	# Calulate an position: 
+	# Calulate position: 
 	for j in range(N_p):
 		x[j,0] = Planets[j].r[0]
 		y[j,0] = Planets[j].r[1]
@@ -103,7 +103,8 @@ def solve(Planets, method, h, t_final =1., beta = 3.):
 				solver.EulerCromer(Planets)
 				x[j,i] = Planets[j].r[0]
 				y[j,i] = Planets[j].r[1]
-				#print("EulerCromer",np.linalg.norm(Planets[j].r[0]),np.linalg.norm(Planets[j].v[0]),np.linalg.norm(np.cross(Planets[j].r,Planets[j].v)))
+				#print("EulerCromer",np.linalg.norm(Planets[j].r),np.linalg.norm(Planets[j].v),np.linalg.norm(np.cross(Planets[j].r,Planets[j].v)))
+				#print(Planets[j].angular_momentum())
 		if method == "VelocityVerlet":
 			for i in range(1,N):
 				accel.Update(Planets,beta)
@@ -115,106 +116,3 @@ def solve(Planets, method, h, t_final =1., beta = 3.):
 	#print(Planets[0].r, Planets[0].v)
 	return(x,y)
 
-
-
-
-# A list only containing Earth orbiting the sun. Initial position x=1, y=0, Intital speed : vy = 2*pi
-OnePlanet = [Planet(3e-6, [1,0,0], [0,2*pi,0], "Earth")]
-
-
-#P_Newtonian = [MercuryNewtonian]
-#x_Newtonian, y_Newtonian = solve(P_Newtonian, "VelocityVerlet",h)
-#plt.plot(x_Newtonian[0], y_Newtonian[0])
-#P_Relativistic = [Mercury]
-#x_Relatvistic, y_Relativistic = solve(P_Relativistic, "VelocityVerlet",h)
-#plt.plot(x_Relatvistic[0], y_Relativistic[0])
-#plt.show()
-
-
-
-def ComapareSolvers(h, t_final = 1.):
-	P_E = [Planet(3e-6, [1,0,0], [0,2*pi,0], "Earth")]
-	P_V = [Planet(3e-6, [1,0,0], [0,2*pi,0], "Earth")]
-	initial_en_E = P_E[0].total_energy() # initial energy P_E
-	initial_en_V = P_V[0].total_energy() # initial energy P_V
-	initial_l_E = P_E[0].angular_momentum() # initial angular momentum P_E
-	initial_l_V = P_V[0].angular_momentum() # initial angular momentum P_E
-	l = np.linalg.norm(np.cross(P_E[0].r, P_E[0].v*P_E[0].mass))
-	#print("before", initial_l_E/P_V[0].mass)
-
-	x_verlet,y_verlet = solve(P_V, "VelocityVerlet", h, t_final)	# solve with Velocity Verlet
-
-	x_euler,y_euler = solve(P_E, "EulerCromer", h, t_final) 		# solve with Euler Cromer
-
-	diff_en_E = (initial_en_E - P_E[0].total_energy())/initial_en_E 	#relative difference in total energy Euler Cormer
-	diff_en_V = (initial_en_V -  P_V[0].total_energy())/initial_en_V	#relatevi difference in total energy Velocity Verlet
-	diff_l_E = (initial_l_E - P_E[0].angular_momentum())/initial_l_E	#relative difference in angular momentum Euler Cromer
-	diff_l_V = (initial_l_V - P_V[0].angular_momentum())/initial_l_V	#relative difference in angular momentum Velocity Verlet
-	#print("after",P_E[0].angular_momentum()/P_V[0].mass)
-	l = np.linalg.norm(np.cross(P_E[0].r, P_E[0].v*P_E[0].mass))
-	#print(P_E[0].r, P_E[0].v)
-	
-	plt.plot(x_euler[0],y_euler[0],label="EulerCromer")
-	plt.plot(x_verlet[0],y_verlet[0],label="VelocityVerlet")
-	plt.title("Solutions of the Sun-Earh system, h=%.2f" %h)
-	plt.xlabel("x/AU")
-	plt.ylabel("y/AU")
-	plt.axis('equal')
-	plt.legend()
-	plt.show()
-	plt.savefig('VV_vs_EC2',dpi=225)
-	return(diff_en_E, diff_en_V,diff_l_E, diff_l_V)
-
-(a,b,c,d) = ComapareSolvers(1/20, 1.)
-
-H=10
-t_final = 1
-diff_en_E = np.zeros(H)
-diff_en_V= np.zeros(H)
-diff_l_E= np.zeros(H)
-diff_l_V= np.zeros(H)
-axis = np.zeros(H)
-for i in range(1,H):
-	print(i)
-	h = 1/(1*i)
-	N = np.int(t_final/h)
-	axis[i-1] = h
-	#diff_en_E[i-1], diff_en_V[i-1],diff_l_E[i-1], diff_l_V[i-1] = ComapareSolvers(h)
-#plt.plot(np.log10(axis), np.log10(diff_en_E), np.log10(axis), np.log10(diff_en_V))
-#plt.figure()
-#plt.plot(axis)
-#plt.savefig("totalenergy2.png")
-#plt.xlabel("h")
-#plt.ylabel("relative difference in energy")
-#plt.show()
-#print(axis.shape)
-#plt.plot(axis, diff_l_E, axis, diff_l_V)
-#plt.xlabel("h")
-#plt.ylabel("relative difference in angular_momentum")
-#plt.show()
-
-
-def plot_difference(H): #does not worK!!!
-
-	diff_en_E = np.zeros(10)
-	diff_en_V= np.zeros(10)
-	diff_l_E= np.zeros(10)
-	diff_l_V= np.zeros(10)
-	axis = np.zeros(10)
-	for i in range(1,10):
-		hh = 1/(10*i)
-		N = np.int(t_final/hh)
-		axis[i-1] = hh
-		diff_en_E[i-1], diff_en_V[i-1],diff_l_E[i-1], diff_l_V[i-1] = ComapareSolvers(hh)
-	plt.plot(axis, diff_en_E, axis, diff_en_V)
-	#plt.xlabel("h")
-	#plt.ylabel("relative difference in energy")
-	plt.show()
-	#plt.plot(axis, diff_l_E, axis, diff_l_V)
-	#plt.xlabel("h")
-	#plt.ylabel("relative difference in angular_momentum")
-	#plt.show()
-
-
-#plot_difference(10)
-#plt.show()
